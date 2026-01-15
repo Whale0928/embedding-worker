@@ -1,4 +1,4 @@
-package commands
+package cmd
 
 import (
 	"fmt"
@@ -76,7 +76,7 @@ func validateONNXModel(modelPath string) error {
 	fmt.Printf("             Library path: %s\n", libPath)
 
 	if _, err := os.Stat(libPath); err != nil {
-		return fmt.Errorf("ONNX Runtime 라이브러리 없음: %s", libPath)
+		return fmt.Errorf("ONNX Runtime 라이브러리 없음: %s\n설치 방법: %s", libPath, getInstallHint())
 	}
 	fmt.Println("             [OK] 라이브러리 파일 존재")
 
@@ -261,5 +261,18 @@ func getONNXRuntimeLibPath() string {
 		return "onnxruntime.dll"
 	default:
 		return "libonnxruntime.so"
+	}
+}
+
+func getInstallHint() string {
+	switch runtime.GOOS {
+	case "darwin":
+		return "brew install onnxruntime"
+	case "linux":
+		return "apt install libonnxruntime-dev 또는 https://github.com/microsoft/onnxruntime/releases"
+	case "windows":
+		return "https://github.com/microsoft/onnxruntime/releases 에서 다운로드"
+	default:
+		return "https://github.com/microsoft/onnxruntime/releases"
 	}
 }
