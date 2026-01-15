@@ -58,6 +58,9 @@ Thumbs.db
 .env
 .env.local
 
+# ONNX models (large files - download separately)
+onnx/
+
 # Air (live reload tool)
 tmp/
 
