@@ -24,7 +24,7 @@ func runCleanUp(cmd *cobra.Command, args []string) error {
 
 	cfg := GetConfig()
 
-	fmt.Printf("[1] 캐시 디렉토리: %s\n", cfg.CacheDir)
+	fmt.Printf("[1] 캐시 디렉토리: %s\n", cfg.HuggingFace.CacheDir)
 	fmt.Println()
 
 	fmt.Println("[2] 모델 파일 삭제...")
@@ -32,7 +32,7 @@ func runCleanUp(cmd *cobra.Command, args []string) error {
 
 	for _, filename := range downloader.ModelFiles {
 
-		filePath := cfg.CacheDir + "/" + filename
+		filePath := cfg.HuggingFace.CacheDir + "/" + filename
 
 		if _, err := os.Stat(filePath); err == nil {
 			if err := os.Remove(filePath); err == nil {

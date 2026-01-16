@@ -30,7 +30,7 @@ func runValid(cmd *cobra.Command, args []string) error {
 
 	// 1. 다운로더 초기화 및 경로 확인
 	fmt.Println("[1] 모델 경로 확인...")
-	dl := downloader.NewHuggingFaceDownloader(cfg.HuggingFaceToken, cfg.ModelRepo, cfg.CacheDir)
+	dl := downloader.NewHuggingFaceDownloader(cfg.HuggingFace.Token, cfg.HuggingFace.ModelRepo, cfg.HuggingFace.CacheDir)
 	modelPath := dl.GetModelPath()
 	tokenizerPath := dl.GetTokenizerPath()
 

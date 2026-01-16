@@ -32,15 +32,15 @@ func runDownload(cmd *cobra.Command, args []string) error {
 	cfg := GetConfig()
 
 	fmt.Println("[1] 설정 확인...")
-	fmt.Printf("    Model repo: %s\n", cfg.ModelRepo)
-	fmt.Printf("    Cache dir: %s\n", cfg.CacheDir)
+	fmt.Printf("    Model repo: %s\n", cfg.HuggingFace.ModelRepo)
+	fmt.Printf("    Cache dir: %s\n", cfg.HuggingFace.CacheDir)
 	fmt.Println()
 
 	// 강제 다운로드 시 기존 파일 삭제
 	if forceDownload {
 		fmt.Println("[1.5] 기존 파일 삭제 (--force)...")
 		for _, filename := range downloader.ModelFiles {
-			filePath := cfg.CacheDir + "/" + filename
+			filePath := cfg.HuggingFace.CacheDir + "/" + filename
 			if err := os.Remove(filePath); err == nil {
 				fmt.Printf("    삭제: %s\n", filename)
 			}
@@ -49,7 +49,7 @@ func runDownload(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Println("[2] 모델 파일 다운로드...")
-	dl := downloader.NewHuggingFaceDownloader(cfg.HuggingFaceToken, cfg.ModelRepo, cfg.CacheDir)
+	dl := downloader.NewHuggingFaceDownloader(cfg.HuggingFace.Token, cfg.HuggingFace.ModelRepo, cfg.HuggingFace.CacheDir)
 	if err := dl.Download(); err != nil {
 		return fmt.Errorf("다운로드 실패: %w", err)
 	}

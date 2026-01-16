@@ -5,42 +5,109 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/joho/godotenv"
+	"github.com/spf13/viper"
 )
 
+// Config 애플리케이션 전체 설정
 type Config struct {
-	HuggingFaceToken string
-	ModelRepo        string
-	CacheDir         string
+	HuggingFace HuggingFaceConfig
+	DB          DBConfig
+	Qdrant      QdrantConfig
 }
 
+// HuggingFaceConfig HuggingFace 관련 설정
+type HuggingFaceConfig struct {
+	Token     string `mapstructure:"HUGGING_FACE_TOKEN"`
+	ModelRepo string `mapstructure:"HUGGING_FACE_MODEL_REPO"`
+	CacheDir  string // 환경변수 아님, 코드에서 설정
+}
+
+// DBConfig 데이터베이스 연결 설정
+type DBConfig struct {
+	Host     string `mapstructure:"DB_HOST"`
+	Port     string `mapstructure:"DB_PORT"`
+	Name     string `mapstructure:"DB_NAME"`
+	User     string `mapstructure:"DB_USER"`
+	Password string `mapstructure:"DB_PASSWORD"`
+}
+
+// QdrantConfig Qdrant 벡터 DB 설정
+type QdrantConfig struct {
+	Host string `mapstructure:"QDRANT_HOST"`
+	Port string `mapstructure:"QDRANT_PORT"`
+}
+
+// Load 환경변수에서 전체 설정 로드
 func Load() (*Config, error) {
-	// .env 파일 로드
-	if err := godotenv.Load(); err != nil {
-		// .env 파일이 없어도 환경변수에서 읽을 수 있음
+	// .env 파일 읽기 (없어도 OK)
+	viper.SetConfigFile(".env")
+	viper.SetConfigType("env")
+	if err := viper.ReadInConfig(); err != nil {
 		fmt.Println("Warning: .env file not found, using environment variables")
 	}
 
-	token := os.Getenv("HUGGING_FACE_TOKEN")
-	if token == "" {
-		return nil, fmt.Errorf("HUGGING_FACE_TOKEN is required")
+	// 환경변수 자동 바인딩
+	viper.AutomaticEnv()
+
+	// 기본값 설정
+	viper.SetDefault("DB_PORT", "3306")
+	viper.SetDefault("QDRANT_HOST", "localhost")
+	viper.SetDefault("QDRANT_PORT", "6333")
+
+	cfg := &Config{}
+
+	// HuggingFace 설정
+	if err := viper.Unmarshal(&cfg.HuggingFace); err != nil {
+		return nil, fmt.Errorf("HuggingFace 설정 로드 실패: %w", err)
 	}
 
-	modelRepo := os.Getenv("HUGGING_FACE_MODEL_REPO")
-	if modelRepo == "" {
-		return nil, fmt.Errorf("HUGGING_FACE_MODEL_REPO is required")
+	// DB 설정
+	if err := viper.Unmarshal(&cfg.DB); err != nil {
+		return nil, fmt.Errorf("DB 설정 로드 실패: %w", err)
 	}
 
-	// 캐시 디렉토리 설정
+	// Qdrant 설정
+	if err := viper.Unmarshal(&cfg.Qdrant); err != nil {
+		return nil, fmt.Errorf("Qdrant 설정 로드 실패: %w", err)
+	}
+
+	// CacheDir 설정 (환경변수 아님)
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get home directory: %w", err)
+		return nil, fmt.Errorf("홈 디렉토리 조회 실패: %w", err)
 	}
-	cacheDir := filepath.Join(homeDir, ".cache", "embedding-worker")
+	cfg.HuggingFace.CacheDir = filepath.Join(homeDir, ".cache", "embedding-worker")
 
-	return &Config{
-		HuggingFaceToken: token,
-		ModelRepo:        modelRepo,
-		CacheDir:         cacheDir,
-	}, nil
+	// 필수값 검증
+	if err := cfg.validate(); err != nil {
+		return nil, err
+	}
+
+	return cfg, nil
+}
+
+// validate 필수 설정값 검증
+func (c *Config) validate() error {
+	if c.HuggingFace.Token == "" {
+		return fmt.Errorf("HUGGING_FACE_TOKEN is required")
+	}
+	if c.HuggingFace.ModelRepo == "" {
+		return fmt.Errorf("HUGGING_FACE_MODEL_REPO is required")
+	}
+	if c.DB.Host == "" {
+		return fmt.Errorf("DB_HOST is required")
+	}
+	if c.DB.Name == "" {
+		return fmt.Errorf("DB_NAME is required")
+	}
+	if c.DB.User == "" {
+		return fmt.Errorf("DB_USER is required")
+	}
+	return nil
+}
+
+// DSN MySQL 연결 문자열 생성
+func (c *DBConfig) DSN() string {
+	return fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+		c.User, c.Password, c.Host, c.Port, c.Name)
 }
