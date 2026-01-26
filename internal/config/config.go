@@ -12,7 +12,8 @@ import (
 type Config struct {
 	HuggingFace HuggingFaceConfig
 	DB          DBConfig
-	Qdrant      QdrantConfig
+	Vector      VectorConfig
+	HttpConfig  EchoHttpConfig
 }
 
 // HuggingFaceConfig HuggingFace 관련 설정
@@ -31,10 +32,15 @@ type DBConfig struct {
 	Password string `mapstructure:"DB_PASSWORD"`
 }
 
-// QdrantConfig Qdrant 벡터 DB 설정
-type QdrantConfig struct {
-	Host string `mapstructure:"QDRANT_HOST"`
-	Port string `mapstructure:"QDRANT_PORT"`
+// VectorConfig 벡터 DB 설정
+type VectorConfig struct {
+	Host string `mapstructure:"VECTOR_HOST"`
+	Port string `mapstructure:"VECTOR_PORT"`
+}
+
+type EchoHttpConfig struct {
+	Host string `mapstructure:"HOST"`
+	Port string `mapstructure:"PORT"`
 }
 
 // Load 환경변수에서 전체 설정 로드
@@ -50,11 +56,18 @@ func Load() (*Config, error) {
 	viper.AutomaticEnv()
 
 	// 기본값 설정
+	viper.SetDefault("HOST", "0.0.0.0")
+	viper.SetDefault("PORT", "8000")
 	viper.SetDefault("DB_PORT", "3306")
-	viper.SetDefault("QDRANT_HOST", "localhost")
-	viper.SetDefault("QDRANT_PORT", "6333")
+	viper.SetDefault("VECTOR_HOST", "localhost")
+	viper.SetDefault("VECTOR_PORT", "8080")
 
 	cfg := &Config{}
+
+	// Http 설정
+	if err := viper.Unmarshal(&cfg.HttpConfig); err != nil {
+		return nil, fmt.Errorf("http 설정 로드 실패: %w", err)
+	}
 
 	// HuggingFace 설정
 	if err := viper.Unmarshal(&cfg.HuggingFace); err != nil {
@@ -66,9 +79,9 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("DB 설정 로드 실패: %w", err)
 	}
 
-	// Qdrant 설정
-	if err := viper.Unmarshal(&cfg.Qdrant); err != nil {
-		return nil, fmt.Errorf("Qdrant 설정 로드 실패: %w", err)
+	// Vector 설정
+	if err := viper.Unmarshal(&cfg.Vector); err != nil {
+		return nil, fmt.Errorf("vector 설정 로드 실패: %w", err)
 	}
 
 	// CacheDir 설정 (환경변수 아님)

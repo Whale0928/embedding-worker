@@ -9,6 +9,7 @@ import (
 
 	"github.com/Whale0928/embedding-worker/internal/config"
 	"github.com/Whale0928/embedding-worker/pkg/handler"
+	"github.com/Whale0928/embedding-worker/pkg/repository"
 )
 
 var serveCmd = &cobra.Command{
@@ -46,8 +47,18 @@ func runServe(cmd *cobra.Command, args []string) error {
 	fmt.Printf("    [OK] DB 연결 성공: %s:%s/%s\n", cfg.DB.Host, cfg.DB.Port, cfg.DB.Name)
 	fmt.Println()
 
-	// 2. Echo 서버 설정
-	fmt.Println("[2] HTTP 서버 설정...")
+	// 2. Vespa 클라이언트 생성
+	fmt.Println("[2] Vespa 클라이언트 설정...")
+	vespaClient := repository.NewVespaClient(
+		fmt.Sprintf("http://%s:%s", cfg.Vector.Host, cfg.Vector.Port),
+		"sample",        // <- cfg 조절로 변경
+		"sample_vector", // <- docType 채우기
+	)
+	fmt.Println("    [OK] Vespa 클라이언트 생성 완료")
+	fmt.Println()
+
+	// 3. Echo 서버 설정
+	fmt.Println("[3] HTTP 서버 설정...")
 	e := echo.New()
 	e.HideBanner = true
 	defer func() { _ = e.Close() }()
@@ -57,27 +68,23 @@ func runServe(cmd *cobra.Command, args []string) error {
 	e.Use(middleware.Recover())
 
 	// 라우터 등록
-	registerRoutes(e)
+	registerRoutes(e, vespaClient)
 	fmt.Println("    [OK] 라우터 등록 완료")
 	fmt.Println()
 
-	// 3. 서버 시작
-	addr := fmt.Sprintf(":%s", cfg.Qdrant.Port) // 일단 Qdrant 포트 재활용, 나중에 SERVER_PORT로 변경
-	// TODO: SERVER_PORT 환경변수 추가
-	addr = ":8080" // 임시 하드코딩
-
-	fmt.Printf("[3] 서버 시작: http://localhost%s\n", addr)
+	// 4. 서버 시작
+	addr := fmt.Sprintf(":%s", cfg.HttpConfig.Port)
+	fmt.Printf("[4] 서버 시작: http://localhost%s\n", addr)
 	fmt.Println()
 
 	return e.Start(addr)
 }
 
-func registerRoutes(e *echo.Echo) {
+func registerRoutes(e *echo.Echo, vespaClient *repository.VespaClient) {
 	// Health check
 	healthHandler := handler.NewHealthHandler()
-	healthHandler.Register(e)
+	vectorHandler := handler.NewVectorHandler(vespaClient)
 
-	// API 그룹
-	// api := e.Group("/api/v1")
-	// TODO: 라우터 추가
+	healthHandler.Register(e)
+	vectorHandler.Register(e)
 }
