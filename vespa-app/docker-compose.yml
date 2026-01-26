@@ -1,0 +1,21 @@
+services:
+  vespa:
+    image: vespaengine/vespa:8.596.20
+    container_name: vespa
+    hostname: vespa-container
+    restart: unless-stopped
+    ports:
+      - "8080:8080"   # Query/Feed API
+      - "19071:19071" # Config Server
+    ulimits:
+      nofile: # 최대 파일 디스크립터 수
+        soft: 262144
+        hard: 262144
+      nproc: # 최대 프로세스/스레드 수
+        soft: 32768
+        hard: 32768
+    deploy:
+      resources:
+        limits:
+          memory: 6G
+    stop_grace_period: 120s

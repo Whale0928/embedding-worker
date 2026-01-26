@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<services version="1.0">
+
+  <!-- container: Search/Feed API server (port 8080) -->
+  <container id="default" version="1.0">
+    <search/>
+    <document-api/>
+  </container>
+
+  <!-- content: Data storage -->
+  <content id="sample" version="1.0">
+    <redundancy>1</redundancy>
+    <documents>
+      <document type="sample_vector" mode="index"/>
+    </documents>
+  </content>
+
+</services>

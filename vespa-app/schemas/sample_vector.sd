@@ -1,0 +1,52 @@
+# Vespa Schema Definition (.sd)
+# Similar to MySQL CREATE TABLE
+
+schema sample_vector {
+
+    # document: data structure to store
+    document sample_vector {
+
+        # field: column definition
+        # indexing options:
+        #   - summary: include in search results
+        #   - attribute: filterable/sortable (loaded in memory)
+        #   - index: text searchable (creates inverted index)
+
+        field id type string {
+            indexing: summary | attribute
+        }
+
+        field text type string {
+            indexing: summary | index
+        }
+
+        # tensor: vector type
+        # tensor<float>(x[1024]): 1024-dim float vector
+        # distance-metric options:
+        #   - angular: cosine similarity (most common)
+        #   - euclidean: L2 distance
+        #   - innerproduct: dot product
+        field embedding type tensor<float>(x[1024]) {
+            indexing: summary | attribute
+            attribute {
+                distance-metric: angular
+            }
+        }
+    }
+
+    # rank-profile: how to rank search results
+    rank-profile default {
+
+        # inputs: query parameters
+        # query(q): vector named "q"
+        inputs {
+            query(q) tensor<float>(x[1024])
+        }
+
+        # first-phase: ranking score formula
+        # closeness: vector similarity (closer to 1 = more similar)
+        first-phase {
+            expression: closeness(field, embedding)
+        }
+    }
+}

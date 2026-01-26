@@ -50,6 +50,7 @@ func runServe(cmd *cobra.Command, args []string) error {
 	fmt.Println("[2] HTTP 서버 설정...")
 	e := echo.New()
 	e.HideBanner = true
+	defer func() { _ = e.Close() }()
 
 	// 미들웨어
 	e.Use(middleware.Logger())
