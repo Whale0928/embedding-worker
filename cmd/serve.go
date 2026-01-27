@@ -51,8 +51,6 @@ func runServe(cmd *cobra.Command, args []string) error {
 	fmt.Println("[2] Vespa 클라이언트 설정...")
 	vespaClient := repository.NewVespaClient(
 		fmt.Sprintf("http://%s:%s", cfg.Vector.Host, cfg.Vector.Port),
-		"sample",        // <- cfg 조절로 변경
-		"sample_vector", // <- docType 채우기
 	)
 	fmt.Println("    [OK] Vespa 클라이언트 생성 완료")
 	fmt.Println()

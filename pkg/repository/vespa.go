@@ -7,12 +7,16 @@ import (
 	"time"
 )
 
+// Schema Vespa 문서 스키마 (namespace/docType)
+type Schema struct {
+	Namespace string
+	DocType   string
+}
+
 // VespaClient Vespa Document API 클라이언트
 type VespaClient struct {
 	baseURL    string
 	httpClient *http.Client
-	namespace  string
-	docType    string
 }
 
 // VespaDocument Visit API 응답의 개별 문서
@@ -28,18 +32,16 @@ type VisitResponse struct {
 	Continuation  string          `json:"continuation,omitempty"`
 }
 
-func NewVespaClient(baseURL, namespace, docType string) *VespaClient {
+func NewVespaClient(baseURL string) *VespaClient {
 	return &VespaClient{
 		baseURL:    baseURL,
 		httpClient: &http.Client{Timeout: 5 * time.Second},
-		namespace:  namespace,
-		docType:    docType,
 	}
 }
 
 // ListDocuments 저장된 문서 목록 조회 (Visit API)
-func (client *VespaClient) ListDocuments(count int) (*VisitResponse, error) {
-	url := fmt.Sprintf("%s/document/v1/%s/%s/docid?wantedDocumentCount=%d", client.baseURL, client.namespace, client.docType, count)
+func (client *VespaClient) ListDocuments(schema Schema, count int) (*VisitResponse, error) {
+	url := fmt.Sprintf("%s/document/v1/%s/%s/docid?wantedDocumentCount=%d", client.baseURL, schema.Namespace, schema.DocType, count)
 	resp, err := client.httpClient.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("vespa client  요청 실패: %w", err)
@@ -60,7 +62,11 @@ func (client *VespaClient) ListDocuments(count int) (*VisitResponse, error) {
 
 // GetDocument 단일 문서 조회
 // API: GET /document/v1/{namespace}/{docType}/docid/{id}
-func (client *VespaClient) GetDocument(id string) (*VespaDocument, error) {
+func (client *VespaClient) GetDocument(schema Schema, id string) (*VespaDocument, error) {
 	// TODO: ListDocuments 참고해서 구현
 	return nil, fmt.Errorf("not implemented")
+}
+
+func (client *VespaClient) GetAllDocuments(schema Schema) ([]VisitResponse, error) {
+	return nil, nil
 }

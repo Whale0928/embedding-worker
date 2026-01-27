@@ -27,7 +27,8 @@ func (h *VectorHandler) Register(e *echo.Echo) {
 
 // ListKeys 저장된 문서 key 목록 조회
 func (h *VectorHandler) ListKeys(c echo.Context) error {
-	result, err := h.vespa.ListDocuments(100)
+	schema := repository.Schema{Namespace: "sample", DocType: "sample_vector"}
+	result, err := h.vespa.ListDocuments(schema, 100)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": err.Error(),
